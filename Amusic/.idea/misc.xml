@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/drawable/ic_baseline_delete_outline_24.xml" value="0.255" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/drawable/item_exsit.xml" value="0.255" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/drawable/music_random.xml" value="0.255" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/drawable/music_random_off.xml" value="0.255" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/drawable/music_random_on.xml" value="0.255" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/drawable/music_repeat_all.xml" value="0.255" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/drawable/music_repeat_no.xml" value="0.255" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/drawable/music_repeat_off.xml" value="0.255" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/drawable/music_repeat_on.xml" value="0.255" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/drawable/music_repeat_one.xml" value="0.255" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/layout/activity_main.xml" value="0.24947916666666667" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/layout/activity_play.xml" value="0.264" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/layout/fragment_1.xml" value="0.24947916666666667" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/layout/fragment_home.xml" value="0.2047008547008547" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/layout/fragment_search.xml" value="0.38197767145135564" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/layout/item_more_button.xml" value="0.20478837109876016" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/layout/item_playlist.xml" value="0.20478837109876016" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/layout/item_songs_list.xml" value="0.4" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/layout/playlist_item.xml" value="0.536" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/layout/recycler_view_item.xml" value="0.1" />
+        <entry key="..\:/Code/AndroidStudioProjects/Amusic/app/src/main/res/layout/songs_list_item.xml" value="0.20478837109876016" />
+      </map>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="Android Studio default JDK" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/build/classes" />
+  </component>
+  <component name="ProjectType">
+    <option name="id" value="Android" />
+  </component>
+</project>

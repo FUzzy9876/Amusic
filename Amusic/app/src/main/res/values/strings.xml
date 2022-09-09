@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Amusic</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="tab_home">主页</string>
+    <string name="tab_search">搜索</string>
+    <string name="tab_library">库</string>
+    <string name="tab_setting">设置</string>
+    <string name="player_random">随机</string>
+    <string name="player_repeat">循环</string>
+    <string name="load_more">加载更多</string>
+</resources>
