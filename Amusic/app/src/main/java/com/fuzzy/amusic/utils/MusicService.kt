@@ -7,39 +7,61 @@ import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
 import com.fuzzy.amusic.MainApplication.getInstance
+import com.fuzzy.amusic.PlayActivity
 import com.fuzzy.amusic.database.Song
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
 
 class MusicService : Service() {
-    private var musicPlayer: MediaPlayer = MediaPlayer()
+    private val player: MediaPlayer = MediaPlayer()
+
+    private var playActivity: PlayActivity? = null
 
     val playlist: MutableList<Song> = mutableListOf()
-    val playlistIdSet: MutableSet<String> = mutableSetOf()
+    private val playlistId: MutableSet<String> = mutableSetOf()
+    private val cachedId: MutableSet<String> = mutableSetOf()
+    var autoCachePlaylist: Boolean = true
+    val mode: MutableMap<String, String> = mutableMapOf(("random" to "off"), ("repeat" to "on"))
 
-    private val cacheChannel: Channel<Song?> = Channel()
-    private val cacheCompleteChannel: Channel<String?> = Channel()
-
-    val titleMessageChannel: Channel<String?> = Channel()
-    val playlistMessageChannel: Channel<MutableList<Song>?> = Channel()
-
-    var currentSong: Song? = null
     var currentIndex: Int = -1
-    var isSongLoad: Boolean = false
-
-    var playMode: MutableMap<String, String> = mutableMapOf("random" to "false", "repeat" to "on")
+        set(value) {
+            field = value
+        }
+    val currentSong: Song?
+        get() {
+            return if (0 <= currentIndex && currentIndex < playlist.size) {
+                playlist[currentIndex]
+            } else {
+                null
+            }
+        }
+    var isLoad: Boolean = false
+        set(value) {
+            field = value
+            if (value) {
+                playActivity?.onSongLoad(currentIndex, currentSong)
+            }
+            else {
+                playActivity?.onSongUnload()
+            }
+        }
+    val isPlaying: Boolean
+        get() {
+            return player.isPlaying
+        }
+    val currentPosition: Int
+        get() {
+            return player.currentPosition
+        }
+    val duration: Int
+        get() {
+            return player.duration
+        }
 
     override fun onCreate() {
         super.onCreate()
     }
 
     override fun onDestroy() {
-        stopCacheSong()
-        release()
-
-        titleMessageChannel.close()
-        playlistMessageChannel.close()
-
         super.onDestroy()
     }
 
@@ -47,274 +69,214 @@ class MusicService : Service() {
         return null
     }
 
-    fun release() {
-        musicPlayer.release()
-    }
-
-    fun setCurrent(index: Int) {
-        var title = ""
-        if (index == -1) {
-            currentIndex = -1
-            currentSong = null
+    fun cache(song: Song) {
+        if (song.isCached()) {
+            Log.i("MusicService / cache", "$song exists in cache file")
+            cachedId.add(song.id)
         }
         else {
-            currentIndex = index
-            currentSong = playlist[index]
-            title = currentSong!!.name
-        }
-        CoroutineScope(Dispatchers.Default).launch {
-            Log.i("setCurrent", "sending message: $currentIndex, $title")
-            titleMessageChannel.send(title)
-            playlistMessageChannel.send(playlist)
-        }
-    }
-
-    fun prepareThenPlay(onCompleteCallBack: () -> Unit = {}) {
-        CoroutineScope(Dispatchers.Main).launch {
-            if (currentIndex == -1) { setCurrent(0) }
-            currentSong = playlist[currentIndex]
-
-            withContext(Dispatchers.Default) {
-                Log.i("prepareThenPlay", "${Thread.currentThread()} start, waiting: ${currentSong!!.id} ${currentSong!!.name}")
-                while (true) {
-                    if (currentSong!!.isExistInCache()) {
-                        break
-                    }
-                    delay(50)
-                }
-            }
-            Log.i("prepareThenPlay", "back to ${Thread.currentThread()}, ready to play")
-
-            kotlin.runCatching {
-                musicPlayer.setDataSource(currentSong!!.toPath())
-                musicPlayer.prepare()
-            }.onSuccess {
-                musicPlayer.isLooping = false
-                musicPlayer.setOnCompletionListener { onPlayComplete() }
-
-                CoroutineScope(Dispatchers.Default).launch {
-                    titleMessageChannel.send(currentSong!!.name)
-                }
-
-                isSongLoad = true
-
-                musicPlayer.start()
-
-                onCompleteCallBack()
-            }.onFailure {
-                Log.e("prepareThenPlay", "error happened in musicPlayer.setDataSource or musicPlayer.prepare")
-                it.printStackTrace()
-
-                onCompleteCallBack()
-            }
-        }
-    }
-
-    fun play(): Boolean {
-        if (playlist.isEmpty()) {
-            Toast.makeText(getInstance(), "empty playlist", Toast.LENGTH_SHORT).show()
-            return false
-        }
-        if (currentSong == null) { prepareThenPlay() }
-        else { musicPlayer.start() }
-        Log.i("play", "playing ${currentSong?.id} ${currentSong?.name}")
-        return true
-    }
-
-    fun pause() {
-        musicPlayer.pause()
-    }
-
-    fun stop() {
-        musicPlayer.stop()
-    }
-
-    fun seek(msec: Int, onCompleteCallBack: () -> Unit = {}) {
-        musicPlayer.setOnSeekCompleteListener {
-            onCompleteCallBack()
-        }
-        musicPlayer.seekTo(msec)
-    }
-
-    fun reset() {
-        currentSong = null
-        isSongLoad = false
-        musicPlayer.reset()
-    }
-
-    fun playPrevious(playOnReady: Boolean) {
-        pause()
-
-        if (playMode["repeat"] == "one") {
-            reset()
-            prepareThenPlay { if (!playOnReady) pause() }
-            return
-        }
-        else if (playMode["random"] == "true") {
-            Log.w("playPrevious", "not expected using this method when play mode is random")
-            val excludeIndex = currentIndex
-            while (currentIndex == excludeIndex) { setCurrent((0 until playlist.size).random()) }
-            reset()
-            prepareThenPlay { if (!playOnReady) pause() }
-            return
-        }
-        else {
-            if (currentIndex > 0) { setCurrent(currentIndex - 1) }
-            else {
-                if (playMode["repeat"] == "on") { setCurrent(playlist.size - 1) }
-                else {
-                    Toast.makeText(getInstance(), "已经是第一首", Toast.LENGTH_SHORT).show()
-                    if (playOnReady) {
-                        seek(0)
-                        play()
-                    }
-                    return
-                }
-            }
-            reset()
-            prepareThenPlay { if (!playOnReady) pause() }
-        }
-    }
-
-    fun playNext(playOnReady: Boolean) {
-        pause()
-
-        if (playMode["repeat"] == "one") {
-            reset()
-            prepareThenPlay { if (!playOnReady) pause() }
-            return
-        }
-        else if (playMode["random"] == "true") {
-            val excludeIndex = currentIndex
-            while (currentIndex == excludeIndex) { setCurrent((0 until playlist.size).random()) }
-            reset()
-            prepareThenPlay { if (!playOnReady) pause() }
-            return
-        }
-        else {
-            if (currentIndex + 1 < playlist.size) { setCurrent(currentIndex + 1) }
-            else {
-                if (playMode["repeat"] == "on") { setCurrent(0) }
-                else {
-                    Toast.makeText(getInstance(), "已经是最后一首", Toast.LENGTH_SHORT).show()
-                    if (playOnReady) {
-                        seek(0)
-                        play()
-                    }
-                    return
-                }
-            }
-            reset()
-            prepareThenPlay { if (!playOnReady) pause() }
-        }
-    }
-
-    fun findSongInPlaylist(song: Song): Int {
-        for (i in playlist.indices) {
-            if (song.id == playlist[i].id) {
-                return i
-            }
-        }
-        return -1
-    }
-
-    fun switchToSong(song: Song, save: Boolean = true) {
-        reset()
-        if (song.id in playlistIdSet) {
-            Log.i("switchToSong", "song exist in playlist, play now")
-            setCurrent(findSongInPlaylist(song))
-            prepareThenPlay()
-        }
-        else {
-            Log.i("switchToSong", "song add to playlist")
-            playlist.add(currentIndex + 1, song)
-            playlistIdSet.add(song.id)
-            setCurrent(currentIndex + 1)
-            CoroutineScope(Dispatchers.Default).launch {
-                cacheChannel.send(song)
-                playlistMessageChannel.send(playlist)
-            }
-            prepareThenPlay()
-            if (save){
-                CoroutineScope(Dispatchers.IO).launch {
-                    ConfigParser().savePlaylist(playlist)
+            CoroutineScope(Dispatchers.IO).launch {
+                val downloadResult: Boolean = Network().downloadSong(song)
+                if (downloadResult) {
+                    Log.i("MusicService / cache", "$song cached successfully")
+                    cachedId.add(song.id)
                 }
             }
         }
     }
 
-    fun addSongToPlaylist(song: Song, save: Boolean = true) {
-        if (song.id in playlistIdSet) {
+    fun addToPlaylist(song: Song, position: Int = -1, save: Boolean = true) {
+        if (song.id in playlistId) {
+            Log.i("MusicService / playlist", "$song already in playlist")
             Toast.makeText(getInstance(), "重复添加", Toast.LENGTH_SHORT).show()
-            return
         }
-        playlist.add(song)
-        playlistIdSet.add(song.id)
-        CoroutineScope(Dispatchers.Default).launch {
-            cacheChannel.send(song)
-            playlistMessageChannel.send(playlist)
+        else {
+            if (position == -1) {
+                playlist.add(song)
+            }
+            else {
+                playlist.add(position, song)
+            }
+            playlistId.add(song.id)
+            if (autoCachePlaylist) {
+                cache(song)
+            }
         }
-        if (save){
+        playActivity?.onPlaylistChange()
+        if (save) {
             CoroutineScope(Dispatchers.IO).launch {
                 ConfigParser().savePlaylist(playlist)
             }
         }
     }
 
-    fun delSongInPlaylist(songId: String) {
-        for (i in playlist.indices) {
-            if (songId == playlist[i].id) {
-                if (i == currentIndex) { playNext(musicPlayer.isPlaying) }
-                playlist.removeAt(i)
-                playlistIdSet.remove(songId)
-                if (i <= currentIndex) { setCurrent(currentIndex - 1) }
-                else { setCurrent(currentIndex) }
-                return
+    fun delFromPlaylist(song: Song) {
+        if (song.id in playlistId) {
+            for (i in playlist.indices) {
+                if (song.id == playlist[i].id) {
+                    playlist.removeAt(i)
+                    break
+                }
             }
+            playlistId.remove(song.id)
+        }
+        else {
+            Log.w("MusicService / del", "$song is not in playlist")
         }
     }
 
-    fun autoCacheSong() {
-        // todo: 联网需要修改
-        CoroutineScope(Dispatchers.IO).launch {
-            Log.i("autoCacheSong", "${Thread.currentThread()} start, waiting for caching song")
-            while (true) {
-                val song = cacheChannel.receive() ?: break
-                Log.i("autoCacheSong", "${song.id} ${song.name} waiting for cache")
-                if (song.isExistInCache()) {
-                    Log.i("autoCacheSong", "${song.id} ${song.name} cache file already exist")
-                }
-                else {
-                    // Network().fakeGetSong(song.id)
-                    Network().downloadSong(song)
-                    Log.i("autoCacheSong", "download complete: ${song.id} ${song.name}")
-                }
-            }
-            Log.i("autoCacheSong", "autoCacheSong closed")
+    fun load(autoPlay: Boolean = true, onComplete: () -> Unit = {}) {
+        if (playlist.isEmpty()) {
+            Log.w("MusicService / load", "playlist is empty, no songs to load")
+            Toast.makeText(getInstance(), "播放列表为空", Toast.LENGTH_SHORT).show()
+            return
         }
-    }
+        if (currentIndex < 0 || currentIndex >= playlist.size) {
+            Log.w("MusicService / load", "playlist size is ${playlist.size}, but current index is $currentIndex, set it to 0")
+            currentIndex = 0
+        }
+        val song: Song = playlist[currentIndex]
 
-    fun stopCacheSong() {
         CoroutineScope(Dispatchers.Main).launch {
-            Log.i("stopCacheSong", "request for stopping auto cache song")
-            cacheChannel.send(null)
+            Log.i("MusicService / load", "waiting for cache file")
+            while (song.id !in cachedId) {
+                delay(50)
+            }
+            Log.i("MusicService / load", "ready to load")
+
+            kotlin.runCatching {
+                player.reset()
+                player.setDataSource(song.toPath())
+                player.prepare()
+                player.isLooping = false
+                player.setOnCompletionListener { onPlayComplete() }
+            }.onSuccess {
+                Log.i("MusicService / load", "success")
+                isLoad = true
+                if (autoPlay) {
+                    Log.i("MusicService / load", "auto play")
+                    play()
+                }
+                onComplete()
+            }.onFailure {
+                Log.e("MusicService / load", "error: ", it)
+                onComplete()
+            }
         }
     }
 
-    fun isPlaying(): Boolean {
-        return musicPlayer.isPlaying
+    fun play(onComplete: () -> Unit = {}) {
+        if (!isLoad) {
+            Log.w("MusicService / play", "no song has load, will auto load a song, but always load a song fist")
+            load(true)
+            return
+        }
+        Log.i("MusicService", "play")
+        player.start()
+
+        playActivity?.onPlayerStart()
     }
 
-    fun getProgress(): Int {
-        return musicPlayer.currentPosition
+    fun pause() {
+        Log.i("MusicService", "pause")
+        player.pause()
+
+        playActivity?.onPlayerPause()
     }
 
-    fun getDuration(): Int {
-        return musicPlayer.duration
+    fun stop() {
+        player.stop()
+
+        playActivity?.onPlayerStop()
     }
 
-    private fun onPlayComplete() {
-        Log.i("onPlayComplete", "play complete")
+    fun seek(msec: Int, onComplete: () -> Unit) {
+        player.setOnSeekCompleteListener {
+            onComplete()
+        }
+        player.seekTo(msec)
+    }
+
+    fun switchToSong(song: Song, autoPlay: Boolean) {
+        if (song.id in playlistId) {
+            currentIndex = playlistId.indexOf(song.id)
+        }
+        else {
+            addToPlaylist(song, currentIndex + 1)
+            currentIndex += 1
+        }
+        load(autoPlay)
+    }
+
+    fun onPlayComplete() {
         playNext(true)
     }
+
+    fun playPrev(play: Boolean = false) {
+        if (mode["random"] == "on") {
+            val exclude: Int = currentIndex
+            var nextIndex: Int = (0 until playlist.size).random()
+            while (nextIndex == exclude) {
+                nextIndex = (0 until playlist.size).random()
+            }
+            currentIndex = nextIndex
+        }
+        else {
+            if (mode["repeat"] == "one") {
+                currentIndex = currentIndex
+            }
+            else {
+                if (currentIndex - 1 > 0) {
+                    currentIndex -= 1
+                }
+                else {
+                    if (mode["repeat"] == "on") {
+                        currentIndex = playlist.size - 1
+                    }
+                    else {
+                        Toast.makeText(getInstance(), "已经是第一个", Toast.LENGTH_SHORT).show()
+                        return
+                    }
+                }
+            }
+        }
+        load(play)
+    }
+
+    fun playNext(play: Boolean = false) {
+        if (mode["random"] == "on") {
+            val exclude: Int = currentIndex
+            var nextIndex: Int = (0 until playlist.size).random()
+            while (nextIndex == exclude) {
+                nextIndex = (0 until playlist.size).random()
+            }
+            currentIndex = nextIndex
+        }
+        else {
+            if (mode["repeat"] == "one") {
+                currentIndex = currentIndex
+            }
+            else {
+                if (currentIndex + 1 < playlist.size) {
+                    currentIndex += 1
+                }
+                else {
+                    if (mode["repeat"] == "on") {
+                        currentIndex = 0
+                    }
+                    else {
+                        Toast.makeText(getInstance(), "已经是最后一个", Toast.LENGTH_SHORT).show()
+                        return
+                    }
+                }
+            }
+        }
+        load(play)
+    }
+
+    fun setPlayActivity(activity: PlayActivity?) {
+        Log.i("MusicService", "get current play activity: $activity")
+        playActivity = activity
+    }
 }
+

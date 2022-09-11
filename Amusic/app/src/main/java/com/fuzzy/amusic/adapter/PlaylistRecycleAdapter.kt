@@ -41,12 +41,12 @@ class PlaylistRecycleAdapter(private val playlist: MutableList<Song>, private va
         if (position == currentIndex) { holder.title.paint.isFakeBoldText = true }
         else {
             holder.title.setOnClickListener {
-                musicService.switchToSong(song)
+                musicService.switchToSong(song, true)
             }
         }
 
         holder.button.setOnClickListener {
-            musicService.delSongInPlaylist(song.id)
+            musicService.delFromPlaylist(song)
         }
     }
 

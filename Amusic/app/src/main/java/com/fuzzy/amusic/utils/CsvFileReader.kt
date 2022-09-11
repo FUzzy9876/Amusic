@@ -17,12 +17,10 @@ class CsvFileReader {
 
     var csvLines: MutableList<String>? = null
 
-    fun downloadSongsData() {
+    suspend fun downloadSongsData() {
         // todo: 联网需要修改
-        CoroutineScope(Dispatchers.IO).launch {
-            Log.i("downloadSongsData", "${Thread.currentThread()} start, download songs database")
-            network.fakeGetData()
-        }
+        Log.i("CsvFileReader / downloadSongsData", "start downloading songs database")
+        network.fakeGetData()
     }
 
     fun readCsvFile() {

@@ -40,10 +40,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initMusicService() {
-        musicService.autoCacheSong()
-
         for (song in ConfigParser().loadPlaylist()) {
-            musicService.addSongToPlaylist(song, false)
+            musicService.addToPlaylist(song, save = false)
         }
     }
 

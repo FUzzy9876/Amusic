@@ -49,10 +49,10 @@ class SongsRecycleAdapter(songsList: List<Song>, addSongsMethod: () -> List<Song
             length.text = Tools.prettyTime(song.length)
 
             title.setOnClickListener {
-                musicService.switchToSong(song)
+                musicService.switchToSong(song, true)
             }
             addButton.setOnClickListener {
-                musicService.addSongToPlaylist(song)
+                musicService.addToPlaylist(song)
             }
         }
         else {
