@@ -9,4 +9,5 @@
     <string name="player_random">随机</string>
     <string name="player_repeat">循环</string>
     <string name="load_more">加载更多</string>
+    <string name="player">播放器</string>
 </resources>

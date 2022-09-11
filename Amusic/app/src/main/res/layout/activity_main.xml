@@ -1,97 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent">
 
-    android:fitsSystemWindows="true"
+    <TextView
+        android:id="@+id/app_title"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:text="@string/app_name"
+        android:textSize="32sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    <ImageView
+        android:id="@+id/loading_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="32dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/downloading" />
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:context=".MainActivity">
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/fragmentContainerView"
+        android:name="androidx.navigation.fragment.NavHostFragment"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:defaultNavHost="true"
+        app:layout_constraintBottom_toTopOf="@+id/tab_bar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/app_title"
+        app:navGraph="@navigation/nav_graph" />
 
-        <TextView
-            android:id="@+id/app_title"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:text="@string/app_name"
-            android:textSize="34sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.498"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/switch_to_player"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="24dp"
+        android:clickable="true"
+        android:contentDescription="@string/player"
+        app:layout_constraintBottom_toTopOf="@+id/tab_bar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:srcCompat="@drawable/music"/>
 
-        <androidx.fragment.app.FragmentContainerView
-            android:id="@+id/fragmentContainerView"
-            android:name="androidx.navigation.fragment.NavHostFragment"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            app:defaultNavHost="true"
-            app:layout_constraintBottom_toTopOf="@+id/tab_bar"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/app_title"
-            app:navGraph="@navigation/nav_graph" />
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tab_bar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="#F6F6F6"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:tabGravity="fill"
+        app:tabIconTint="#FC966E"
+        app:tabIndicatorColor="#FC966E"
+        app:tabInlineLabel="true"
+        app:tabMode="fixed"
+        app:tabTextColor="#FC966E">
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/switch_to_player"
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tab_home"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="24dp"
-            android:layout_marginBottom="24dp"
-            android:clickable="true"
-            app:layout_constraintBottom_toTopOf="@+id/tab_bar"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:srcCompat="@drawable/music" />
+            android:icon="@drawable/toolbar_home"
+            android:text="@string/tab_home" />
 
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/tab_bar"
-            android:layout_width="0dp"
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tab_search"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="#F6F6F6"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:tabGravity="fill"
-            app:tabIconTint="#FC966E"
-            app:tabIndicatorColor="#FC966E"
-            app:tabInlineLabel="true"
-            app:tabMode="fixed"
-            app:tabTextColor="#FC966E">
+            android:icon="@drawable/toolbar_search"
+            android:text="@string/tab_search" />
 
-            <com.google.android.material.tabs.TabItem
-                android:id="@+id/tab_home"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:icon="@drawable/toolbar_home"
-                android:text="@string/tab_home" />
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tab_library"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:icon="@drawable/toolbar_library"
+            android:text="@string/tab_library" />
 
-            <com.google.android.material.tabs.TabItem
-                android:id="@+id/tab_search"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:icon="@drawable/toolbar_search"
-                android:text="@string/tab_search" />
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tab_setting"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:icon="@drawable/toolbar_setting"
+            android:text="@string/tab_setting" />
+    </com.google.android.material.tabs.TabLayout>
 
-            <com.google.android.material.tabs.TabItem
-                android:id="@+id/tab_library"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:icon="@drawable/toolbar_library"
-                android:text="@string/tab_library" />
-
-            <com.google.android.material.tabs.TabItem
-                android:id="@+id/tab_setting"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:icon="@drawable/toolbar_setting"
-                android:text="@string/tab_setting" />
-        </com.google.android.material.tabs.TabLayout>
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

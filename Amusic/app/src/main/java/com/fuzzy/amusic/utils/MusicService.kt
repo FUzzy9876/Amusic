@@ -19,13 +19,30 @@ class MusicService : Service() {
     val playlist: MutableList<Song> = mutableListOf()
     private val playlistId: MutableSet<String> = mutableSetOf()
     private val cachedId: MutableSet<String> = mutableSetOf()
+    val cachingList: MutableList<Song> = mutableListOf()
     var autoCachePlaylist: Boolean = true
+
+    val onCacheStartCallbacks: MutableList<() -> Unit> = mutableListOf()
+    val onCacheEndCallbacks: MutableList<() -> Unit> = mutableListOf()
+
     val mode: MutableMap<String, String> = mutableMapOf(("random" to "off"), ("repeat" to "on"))
 
-    var currentIndex: Int = -1
+    var cachingNum: Int = 0
         set(value) {
+            val origin: Int = field
             field = value
+            if (origin == 0 && field > 0) {
+                for (func in onCacheStartCallbacks) {
+                    func()
+                }
+            }
+            if (origin > 0 && field == 0) {
+                for (func in onCacheEndCallbacks) {
+                    func()
+                }
+            }
         }
+    var currentIndex: Int = -1
     val currentSong: Song?
         get() {
             return if (0 <= currentIndex && currentIndex < playlist.size) {
@@ -76,9 +93,12 @@ class MusicService : Service() {
         }
         else {
             CoroutineScope(Dispatchers.IO).launch {
+                cachingList.add(song)
+                Log.i("MusicService / cache", "current cache list size is ${cachingList.size}")
                 val downloadResult: Boolean = Network().downloadSong(song)
                 if (downloadResult) {
                     Log.i("MusicService / cache", "$song cached successfully")
+                    cachingList.remove(song)
                     cachedId.add(song.id)
                 }
             }
