@@ -51,6 +51,7 @@ class PlayActivity : AppCompatActivity() {
 
         toolbar.title = musicService.currentSong?.name
         toolbar.subtitle = musicService.currentSong?.artists
+        toolbar.setNavigationOnClickListener { onBackPressed() }
     }
     
     private fun setToolbar(title: String?, subTitle: String?) {

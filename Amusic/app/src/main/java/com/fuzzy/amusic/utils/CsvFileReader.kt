@@ -80,4 +80,21 @@ class CsvFileReader {
         }
         return result.toList()
     }
+
+    fun search(str: String): List<Song> {
+        val target: String = str.replace(";", "/")
+        val result: MutableList<Song> = mutableListOf()
+        if (csvLines == null) {
+            readCsvFile()
+        }
+        for (line in csvLines!!) {
+            if (line.contains(target)) {
+                result.add(stringToSong(line))
+            }
+            if (result.size >= 50) {
+                break
+            }
+        }
+        return result.toList()
+    }
 }
