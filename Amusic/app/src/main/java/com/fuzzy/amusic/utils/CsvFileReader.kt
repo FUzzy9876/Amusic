@@ -17,10 +17,15 @@ class CsvFileReader {
 
     var csvLines: MutableList<String>? = null
 
-    suspend fun downloadSongsData() {
-        // todo: 联网需要修改
-        Log.i("CsvFileReader / downloadSongsData", "start downloading songs database")
-        network.fakeGetData()
+    suspend fun downloadSongsData(force: Boolean = false) {
+        val csvFile = File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)!!.absolutePath + "/song_database.csv")
+        if (force || !csvFile.isFile) {
+            Log.i("CsvFileReader / downloadSongsData", "start downloading songs database")
+            network.downloadSongsData()
+        }
+        else {
+            Log.i("CsvFileReader / downloadSongsData", "songs database exists")
+        }
     }
 
     fun readCsvFile() {

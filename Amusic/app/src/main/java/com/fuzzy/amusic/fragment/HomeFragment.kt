@@ -43,10 +43,10 @@ class HomeFragment : Fragment() {
         initSongsList()
     }
 
-    private fun initSongsList() {
+    private fun initSongsList(force: Boolean = false) {
         CoroutineScope(Dispatchers.Main).launch {
             withContext(Dispatchers.IO) {
-                csvFileReader.downloadSongsData()
+                csvFileReader.downloadSongsData(force)
             }
             songsList = csvFileReader.getCsvData(0, 29).toMutableList()
 
@@ -63,6 +63,10 @@ class HomeFragment : Fragment() {
         val moreSongs = csvFileReader.getCsvData(songsList.size, songsList.size + 30 - 1)
         songsList.addAll(moreSongs)
         return moreSongs
+    }
+
+    fun updateSongsList() {
+        initSongsList(force = true)
     }
 
     private fun isExternalStorageWritable(): Boolean {

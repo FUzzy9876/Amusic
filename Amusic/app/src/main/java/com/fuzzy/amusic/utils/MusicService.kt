@@ -122,7 +122,9 @@ class MusicService : Service() {
                 cache(song)
             }
         }
+
         playActivity?.onPlaylistChange()
+
         if (save) {
             CoroutineScope(Dispatchers.IO).launch {
                 ConfigParser().savePlaylist(playlist)
@@ -130,15 +132,29 @@ class MusicService : Service() {
         }
     }
 
-    fun delFromPlaylist(song: Song) {
+    fun delFromPlaylist(song: Song, save: Boolean = true) {
         if (song.id in playlistId) {
             for (i in playlist.indices) {
                 if (song.id == playlist[i].id) {
                     playlist.removeAt(i)
+                    if (i < currentIndex) {
+                        currentIndex -= 1
+                    }
+                    else if (i == currentIndex) {
+                        load()
+                    }
                     break
                 }
             }
             playlistId.remove(song.id)
+
+            playActivity?.onPlaylistChange()
+
+            if (save) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    ConfigParser().savePlaylist(playlist)
+                }
+            }
         }
         else {
             Log.w("MusicService / del", "$song is not in playlist")
@@ -242,10 +258,7 @@ class MusicService : Service() {
             currentIndex = nextIndex
         }
         else {
-            if (mode["repeat"] == "one") {
-                currentIndex = currentIndex
-            }
-            else {
+            if (mode["repeat"] != "one") {
                 if (currentIndex - 1 > 0) {
                     currentIndex -= 1
                 }
@@ -273,10 +286,7 @@ class MusicService : Service() {
             currentIndex = nextIndex
         }
         else {
-            if (mode["repeat"] == "one") {
-                currentIndex = currentIndex
-            }
-            else {
+            if (mode["repeat"] != "one") {
                 if (currentIndex + 1 < playlist.size) {
                     currentIndex += 1
                 }

@@ -19,11 +19,15 @@ class Network {
 
         val cacheDir: String = context.getExternalFilesDir(null)!!.absolutePath + "/cache"
         if (!File(cacheDir).isDirectory) {
-            Log.i("Network / download", "cache dir does not exist, auto create it")
+            Log.i("Network / download", "cache dir does not exist, will create it")
             File(cacheDir).mkdirs()
         }
 
         val cachePath: String = cacheDir + "/" + File(path).name
+        if (File(cachePath).isFile) {
+            Log.i("Network / download", "cache file exists, will remove it")
+            File(cachePath).delete()
+        }
 
         Log.i("Network / download", "download start, from url: $url, to path: $path, cache file in: $cachePath")
         try {
@@ -42,7 +46,12 @@ class Network {
             else {
                 throw RuntimeException("network error, ${connection.responseCode}")
             }
+            if (File(path).isFile) {
+                Log.i("Network / download", "target file exists, will remove it")
+                File(path).delete()
+            }
             File(cachePath).copyTo(File(path))
+            File(cachePath).delete()
             Log.i("Network / download", "download $path complete")
         }
         catch (e: Exception) {
@@ -63,25 +72,5 @@ class Network {
 
     suspend fun downloadSong(song: Song): Boolean {
         return download(song.toUrl(), song.toPath())
-    }
-
-    suspend fun fakeDownload(resourceInput: InputStream, path: String) {
-        BufferedInputStream(resourceInput).use { input ->
-            BufferedOutputStream(FileOutputStream(path)).use { output ->
-                input.copyTo(output)
-            }
-        }
-    }
-
-    suspend fun fakeGetSong(songId: String) {
-        val path = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC)!!.absolutePath + "/" + songId + ".mp3"
-        val asset = context.assets.open("$songId.mp3")
-        fakeDownload(asset, path)
-    }
-
-    suspend fun fakeGetData() {
-        val path = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)!!.absolutePath + "/song_database.csv"
-        val asset = context.assets.open("song_database.csv")
-        fakeDownload(asset, path)
     }
 }

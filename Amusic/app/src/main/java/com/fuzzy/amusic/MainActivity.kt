@@ -8,11 +8,14 @@ import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.core.view.isVisible
+import androidx.fragment.app.Fragment
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import com.fuzzy.amusic.MainApplication.getMusicService
 import com.fuzzy.amusic.database.Song
+import com.fuzzy.amusic.fragment.HomeFragment
 import com.fuzzy.amusic.utils.ConfigParser
 import com.fuzzy.amusic.utils.CsvFileReader
 import com.fuzzy.amusic.utils.MusicService
@@ -34,10 +37,7 @@ class MainActivity : AppCompatActivity() {
 
         initMusicService()
 
-        // 悬浮按钮
-        findViewById<FloatingActionButton>(R.id.switch_to_player).setOnClickListener {
-            startActivity(Intent(this, PlayActivity::class.java))
-        }
+        initButton()
 
         // fragment导航
         initNav()
@@ -90,6 +90,27 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 delay(100)
+            }
+        }
+    }
+
+    private fun initButton() {
+        // 悬浮按钮
+        findViewById<FloatingActionButton>(R.id.switch_to_player).setOnClickListener {
+            startActivity(Intent(this, PlayActivity::class.java))
+        }
+        // logo按钮
+        findViewById<TextView>(R.id.app_title).setOnClickListener {
+            onTopBarClicked()
+        }
+    }
+
+    private fun onTopBarClicked() {
+        val navHostFragment = this.supportFragmentManager.fragments.first() as NavHostFragment
+        navHostFragment.childFragmentManager.fragments.forEach {
+            if (HomeFragment::class.java.isAssignableFrom(it.javaClass)) {
+                val fragment: HomeFragment = it as HomeFragment
+                fragment.updateSongsList()
             }
         }
     }
